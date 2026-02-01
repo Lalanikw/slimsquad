@@ -5,6 +5,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   collection,
   getDocs,
   query,
@@ -24,8 +25,10 @@ export interface MemberProfile {
   weight: string;
   weightUnit: "kg" | "lbs";
   waist: string;
+  waistUnit: "cm" | "in";
   targetWeight: string;
   targetWaist: string;
+  targetWaistUnit: "cm" | "in";
   targetBMI: string;
   createdAt?: Timestamp;
 }
@@ -110,7 +113,6 @@ export async function getEntries(squadId: string, userId: string): Promise<Weekl
 // Delete a weekly entry by date
 export async function deleteEntry(squadId: string, userId: string, date: string) {
   const entryDoc = doc(db, "squads", squadId, "members", userId, "entries", date);
-  const { deleteDoc } = await import("firebase/firestore");
   await deleteDoc(entryDoc);
 }
 // Stores which squad a logged-in user belongs to

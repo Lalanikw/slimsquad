@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../components/AuthProvider";
-import NavBar from "../../components/NavBar";
-import { getProfile, saveProfile, MemberProfile } from "../../lib/db";
-import { calcBMI, bmiCategory } from "../../lib/utils";
+import { useAuth } from "@/components/AuthProvider";
+import NavBar from "@/components/NavBar";
+import { getProfile, saveProfile, MemberProfile } from "@/lib/db";
+import { calcBMI, bmiCategory } from "@/lib/utils";
 
 const avatars = ["💪", "🏃", "🚴", "🧘", "⚡", "🔥", "🌟", "🎯", "🏋️", "🧗"];
 
@@ -25,26 +25,28 @@ export default function ProfilePage() {
     }
   }, [user, squadId, loading, router]);
 
-  // Load current user's profile
   useEffect(() => {
     if (!squadId || !user) return;
     async function fetchProfile() {
       const p = await getProfile(squadId!, user!.uid);
-      if (p) setProfile(p);
+      if (p) {
+        // Backfill waistUnit for existing profiles that don't have it yet
+        if (!p.waistUnit) p.waistUnit = "cm";
+        if (!p.targetWaistUnit) p.targetWaistUnit = "cm";
+        setProfile(p);
+      }
       setDataLoading(false);
     }
     fetchProfile();
   }, [squadId, user]);
 
-  // Update a field and save
   function updateField(field: keyof MemberProfile, value: string) {
     if (!profile) return;
     const updated = { ...profile, [field]: value };
     setProfile(updated);
-    saveProfile(updated); // fire-and-forget save
+    saveProfile(updated);
   }
 
-  // Save name
   function saveName() {
     if (!profile || !tempName.trim()) return;
     const updated = { ...profile, displayName: tempName.trim() };
@@ -53,7 +55,6 @@ export default function ProfilePage() {
     setEditingName(false);
   }
 
-  // Save avatar
   function saveAvatar(avatar: string) {
     if (!profile) return;
     const updated = { ...profile, avatar };
@@ -151,7 +152,6 @@ export default function ProfilePage() {
         {/* Name & Avatar Card */}
         <div style={cardStyle}>
           <div style={{ textAlign: "center" }}>
-            {/* Avatar */}
             <div
               style={{ fontSize: 44, cursor: "pointer", display: "inline-block" }}
               onClick={() => setShowAvatarPicker(!showAvatarPicker)}
@@ -160,7 +160,6 @@ export default function ProfilePage() {
             </div>
             <div style={{ fontSize: 10, color: "#475569", marginBottom: 8 }}>Tap to change</div>
 
-            {/* Avatar Picker */}
             {showAvatarPicker && (
               <div style={{
                 display: "flex",
@@ -191,7 +190,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Name */}
             {editingName ? (
               <div>
                 <input
@@ -235,66 +233,49 @@ export default function ProfilePage() {
         <div style={cardStyle}>
           <div style={cardTitleStyle}>Measurements</div>
 
-          {/* Height row */}
+          {/* Height */}
           <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Height</label>
-              <input
-                type="number"
-                style={inputStyle}
-                value={profile.height}
-                onChange={(e) => updateField("height", e.target.value)}
-                placeholder="0"
-              />
+              <input type="number" style={inputStyle} value={profile.height} onChange={(e) => updateField("height", e.target.value)} placeholder="0" />
             </div>
             <div>
               <label style={labelStyle}>Unit</label>
-              <select
-                style={selectStyle}
-                value={profile.heightUnit}
-                onChange={(e) => updateField("heightUnit", e.target.value)}
-              >
+              <select style={selectStyle} value={profile.heightUnit} onChange={(e) => updateField("heightUnit", e.target.value)}>
                 <option value="cm">cm</option>
                 <option value="in">in</option>
               </select>
             </div>
           </div>
 
-          {/* Weight row */}
+          {/* Weight */}
           <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Weight</label>
-              <input
-                type="number"
-                style={inputStyle}
-                value={profile.weight}
-                onChange={(e) => updateField("weight", e.target.value)}
-                placeholder="0"
-              />
+              <input type="number" style={inputStyle} value={profile.weight} onChange={(e) => updateField("weight", e.target.value)} placeholder="0" />
             </div>
             <div>
               <label style={labelStyle}>Unit</label>
-              <select
-                style={selectStyle}
-                value={profile.weightUnit}
-                onChange={(e) => updateField("weightUnit", e.target.value)}
-              >
+              <select style={selectStyle} value={profile.weightUnit} onChange={(e) => updateField("weightUnit", e.target.value)}>
                 <option value="kg">kg</option>
                 <option value="lbs">lbs</option>
               </select>
             </div>
           </div>
 
-          {/* Waist */}
-          <div>
-            <label style={labelStyle}>Waist (cm)</label>
-            <input
-              type="number"
-              style={inputStyle}
-              value={profile.waist}
-              onChange={(e) => updateField("waist", e.target.value)}
-              placeholder="0"
-            />
+          {/* Waist — with unit selector */}
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Waist</label>
+              <input type="number" style={inputStyle} value={profile.waist} onChange={(e) => updateField("waist", e.target.value)} placeholder="0" />
+            </div>
+            <div>
+              <label style={labelStyle}>Unit</label>
+              <select style={selectStyle} value={profile.waistUnit || "cm"} onChange={(e) => updateField("waistUnit", e.target.value)}>
+                <option value="cm">cm</option>
+                <option value="in">in</option>
+              </select>
+            </div>
           </div>
 
           {/* Live BMI */}
@@ -320,37 +301,31 @@ export default function ProfilePage() {
         <div style={cardStyle}>
           <div style={cardTitleStyle}>🎯 Targets (12-Month Goal)</div>
 
+          {/* Target Weight */}
           <div style={{ marginBottom: 10 }}>
             <label style={labelStyle}>Target Weight ({profile.weightUnit})</label>
-            <input
-              type="number"
-              style={inputStyle}
-              value={profile.targetWeight}
-              onChange={(e) => updateField("targetWeight", e.target.value)}
-              placeholder="0"
-            />
+            <input type="number" style={inputStyle} value={profile.targetWeight} onChange={(e) => updateField("targetWeight", e.target.value)} placeholder="0" />
           </div>
 
-          <div style={{ marginBottom: 10 }}>
-            <label style={labelStyle}>Target Waist (cm)</label>
-            <input
-              type="number"
-              style={inputStyle}
-              value={profile.targetWaist}
-              onChange={(e) => updateField("targetWaist", e.target.value)}
-              placeholder="0"
-            />
+          {/* Target Waist — with unit selector */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Target Waist</label>
+              <input type="number" style={inputStyle} value={profile.targetWaist} onChange={(e) => updateField("targetWaist", e.target.value)} placeholder="0" />
+            </div>
+            <div>
+              <label style={labelStyle}>Unit</label>
+              <select style={selectStyle} value={profile.targetWaistUnit || "cm"} onChange={(e) => updateField("targetWaistUnit", e.target.value)}>
+                <option value="cm">cm</option>
+                <option value="in">in</option>
+              </select>
+            </div>
           </div>
 
+          {/* Target BMI */}
           <div>
             <label style={labelStyle}>Target BMI</label>
-            <input
-              type="number"
-              style={inputStyle}
-              value={profile.targetBMI}
-              onChange={(e) => updateField("targetBMI", e.target.value)}
-              placeholder="e.g. 24.9"
-            />
+            <input type="number" style={inputStyle} value={profile.targetBMI} onChange={(e) => updateField("targetBMI", e.target.value)} placeholder="e.g. 24.9" />
           </div>
         </div>
       </div>

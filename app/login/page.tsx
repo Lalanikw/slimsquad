@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import { auth } from "../../lib/firebase";
-import { useAuth } from "../../components/AuthProvider";
+import { auth } from "@/lib/firebase";
+import { useAuth } from "@/components/AuthProvider";
 import {
   createSquad,
   getSquad,
   saveProfile,
   setUserSquad,
   getProfile,
-} from "../../lib/db";
+} from "@/lib/db";
 
 const avatars = ["💪", "🏃", "🚴", "🧘", "⚡", "🔥", "🌟", "🎯", "🏋️", "🧗"];
 
@@ -78,8 +78,10 @@ export default function LoginPage() {
         weight: "",
         weightUnit: "kg",
         waist: "",
+        waistUnit: "in",
         targetWeight: "",
         targetWaist: "",
+        targetWaistUnit: "in",
         targetBMI: "",
       });
 
@@ -124,8 +126,10 @@ export default function LoginPage() {
           weight: "",
           weightUnit: "kg",
           waist: "",
+          waistUnit: "in",
           targetWeight: "",
           targetWaist: "",
+          targetWaistUnit: "in",
           targetBMI: "",
         });
       }

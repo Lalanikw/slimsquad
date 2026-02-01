@@ -26,3 +26,16 @@ export function bmiCategory(bmi: string | null): { label: string; color: string 
   if (v < 30) return { label: "Overweight", color: "#f97316" };
   return { label: "Obese", color: "#ef4444" };
 }
+
+// ─── WAIST CONVERSION ───────────────────────────────────────────
+// Converts any waist value to cm for consistent comparison
+export function waistToCm(value: string, unit: string): number {
+  const v = parseFloat(value);
+  if (!v || v <= 0) return 0;
+  return unit === "in" ? v * 2.54 : v;
+}
+
+// Converts cm back to a target unit for display
+export function waistFromCm(cm: number, unit: string): number {
+  return unit === "in" ? cm / 2.54 : cm;
+}

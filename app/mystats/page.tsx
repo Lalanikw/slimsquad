@@ -13,7 +13,7 @@ import {
   MemberProfile,
   WeeklyEntry,
 } from "@/lib/db";
-import { calcBMI, bmiCategory } from "@/lib/utils";
+import { calcBMI, bmiCategory, waistToCm } from "@/lib/utils";
 
 // Wrapper that provides the Suspense boundary Next.js requires for useSearchParams
 export default function MyStatsPage() {
@@ -141,14 +141,22 @@ function MyStatsContent() {
   const needed = start - target;
   const pct = needed > 0 ? Math.max(0, Math.min(100, (totalLost / needed) * 100)) : 0;
 
-  // Waist progress
-  const waistStart = entries.length > 0 ? parseFloat(entries[0].waist) : parseFloat(active.waist) || 0;
-  const waistCurrent = entries.length > 0
-    ? parseFloat(entries[entries.length - 1].waist || active.waist)
-    : parseFloat(active.waist) || 0;
-  const waistTarget = parseFloat(active.targetWaist) || 0;
-  const waistNeeded = waistStart - waistTarget;
-  const waistPct = waistNeeded > 0 ? Math.max(0, Math.min(100, ((waistStart - waistCurrent) / waistNeeded) * 100)) : 0;
+  // Waist progress — convert everything to cm for consistent comparison
+  const waistUnit = active.waistUnit || "cm";
+  const targetWaistUnit = active.targetWaistUnit || "cm";
+  const waistStartCm = entries.length > 0
+    ? waistToCm(entries[0].waist, waistUnit)
+    : waistToCm(active.waist, waistUnit);
+  const waistCurrentCm = entries.length > 0
+    ? waistToCm(entries[entries.length - 1].waist || active.waist, waistUnit)
+    : waistToCm(active.waist, waistUnit);
+  const waistTargetCm = waistToCm(active.targetWaist, targetWaistUnit);
+  const waistNeeded = waistStartCm - waistTargetCm;
+  const waistPct = waistNeeded > 0 ? Math.max(0, Math.min(100, ((waistStartCm - waistCurrentCm) / waistNeeded) * 100)) : 0;
+  // Display value stays in user's chosen unit
+  const waistDisplayCurrent = entries.length > 0
+    ? entries[entries.length - 1].waist || active.waist
+    : active.waist;
 
   const cardStyle: React.CSSProperties = {
     background: "rgba(30,41,59,0.8)",
@@ -270,10 +278,10 @@ function MyStatsContent() {
           <div style={cardStyle}>
             <div style={cardTitleStyle}>
               <span>Waist</span>
-              {active.targetWaist && <span style={{ color: "#f59e0b", fontSize: 12 }}>Target: {active.targetWaist} cm</span>}
+              {active.targetWaist && <span style={{ color: "#f59e0b", fontSize: 12 }}>Target: {active.targetWaist} {active.targetWaistUnit || "cm"}</span>}
             </div>
             <div style={{ fontSize: 24, fontWeight: 800 }}>
-              {waistCurrent || "—"} <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>cm</span>
+              {waistDisplayCurrent || "—"} <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>{waistUnit}</span>
             </div>
             {active.targetWaist && (
               <div style={{ height: 8, background: "#0f172a", borderRadius: 4, overflow: "hidden", marginTop: 8 }}>
@@ -355,7 +363,7 @@ function MyStatsContent() {
                 />
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Waist (cm)</label>
+                <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Waist ({active.waistUnit || "cm"})</label>
                 <input
                   type="number"
                   value={newWaist}
@@ -437,7 +445,7 @@ function MyStatsContent() {
                       {new Date(e.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </div>
                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                      Waist: {e.waist || "—"} cm &nbsp;|&nbsp; BMI: {e.bmi || "—"}
+                      Waist: {e.waist || "—"} {waistUnit} &nbsp;|&nbsp; BMI: {e.bmi || "—"}
                     </div>
                   </div>
                   <div style={{ textAlign: "right", marginRight: 12 }}>
